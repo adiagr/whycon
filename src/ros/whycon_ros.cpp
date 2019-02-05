@@ -7,7 +7,7 @@
 #include <yaml-cpp/yaml.h>
 #include <whycon/Projection.h>
 #include "whycon_ros.h"
-
+#include <std_msgs/Int8.h>
 whycon::WhyConROS::WhyConROS(ros::NodeHandle& n) : is_tracking(false), should_reset(true), it(n)
 {
 	transformation_loaded = false;
@@ -43,7 +43,7 @@ whycon::WhyConROS::WhyConROS(ros::NodeHandle& n) : is_tracking(false), should_re
   poses_pub = n.advertise<geometry_msgs::PoseArray>("poses", 1);
   context_pub = n.advertise<sensor_msgs::Image>("context", 1);
 	projection_pub = n.advertise<whycon::Projection>("projection", 1);
-
+  nodetect_pub = n.advertise<std_msgs::Int8>("no_detect",1);
   reset_service = n.advertiseService("reset", &WhyConROS::reset, this);
 }
 
@@ -64,8 +64,12 @@ void whycon::WhyConROS::on_image(const sensor_msgs::ImageConstPtr& image_msg, co
     publish_results(image_msg->header, cv_ptr);
     should_reset = false;
   }
-  else if (image_pub.getNumSubscribers() != 0)
-    image_pub.publish(cv_ptr);
+  else if (image_pub.getNumSubscribers() != 0){
+      image_pub.publish(cv_ptr);
+  nodetect_pub.publish(0);
+  }
+  else
+    nodetect_pub.publish(0);
 
   if (context_pub.getNumSubscribers() != 0) {
     cv_bridge::CvImage cv_img_context;
